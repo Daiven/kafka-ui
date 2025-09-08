@@ -23,7 +23,12 @@ public class WebController {
     }
 
     @GetMapping
-    public String index() {
+    public String index(@RequestParam(value = "bootstrap", required = false) String bootstrap,
+                        Model model) throws ExecutionException, InterruptedException {
+        List<String> topics = kafkaService.listTopics(bootstrap);
+        Collections.sort(topics);
+        model.addAttribute("topics", topics);
+        model.addAttribute("bootstrap", bootstrap);
         return "index";
     }
 
@@ -66,7 +71,7 @@ public class WebController {
         }
         kafkaService.send(bootstrap, topic, key, partition, headerMap, payload);
         model.addAttribute("produceOk", true);
-        return index();
+        return topics(bootstrap, model);
     }
 
     @GetMapping("/consume")
@@ -81,6 +86,11 @@ public class WebController {
                           Model model) {
         List<ConsumerRecord<String, byte[]>> records = kafkaService.consumeOnce(
                 bootstrap, topic, groupId, offsetReset, partition, offset, max, timeout);
+        try {
+            List<String> topics = kafkaService.listTopics(bootstrap);
+            Collections.sort(topics);
+            model.addAttribute("topics", topics);
+        } catch (Exception ignored) {}
         model.addAttribute("consumed", records);
         return "index";
     }

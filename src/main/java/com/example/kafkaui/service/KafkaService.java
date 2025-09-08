@@ -70,7 +70,12 @@ public class KafkaService {
         if (headers != null) {
             headers.forEach((k, v) -> record.headers().add(k, v.getBytes()));
         }
-        template.send(record);
+        try {
+            template.send(record).get();
+            template.flush();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send to Kafka", e);
+        }
     }
 
     public List<ConsumerRecord<String, byte[]>> consumeOnce(
@@ -89,8 +94,10 @@ public class KafkaService {
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId != null && !groupId.isBlank() ? groupId : "kafka-ui-temp-");
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetReset == null || offsetReset.isBlank() ? "latest" : offsetReset);
+        String effectiveGroup = groupId != null && !groupId.isBlank() ? groupId : ("kafka-ui-" + UUID.randomUUID());
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, effectiveGroup);
+        String effectiveReset = (offsetReset == null || offsetReset.isBlank()) ? "earliest" : offsetReset;
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, effectiveReset);
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 
         try (KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(props)) {
@@ -99,9 +106,19 @@ public class KafkaService {
                 consumer.assign(Collections.singletonList(tp));
                 if (offset != null) {
                     consumer.seek(tp, offset);
+                } else if ("earliest".equalsIgnoreCase(effectiveReset)) {
+                    consumer.seekToBeginning(Collections.singletonList(tp));
                 }
             } else {
                 consumer.subscribe(Collections.singletonList(topic));
+                // Ensure assignment is obtained
+                consumer.poll(Duration.ofMillis(50));
+                if (offset == null && "earliest".equalsIgnoreCase(effectiveReset)) {
+                    Set<TopicPartition> assigned = consumer.assignment();
+                    if (!assigned.isEmpty()) {
+                        consumer.seekToBeginning(assigned);
+                    }
+                }
             }
 
             List<ConsumerRecord<String, byte[]>> result = new ArrayList<>();

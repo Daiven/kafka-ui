@@ -69,7 +69,10 @@
         </div>
         <div>
           <label>Topic</label>
-          <input name="topic" required />
+          <select name="topic" required>
+            <option value="" disabled selected>Выберите топик</option>
+            <option th:each="t : ${topics}" th:value="${t}" th:text="${t}"></option>
+          </select>
         </div>
         <div>
           <label>Partitions</label>
@@ -93,7 +96,10 @@
         </div>
         <div>
           <label>Topic</label>
-          <input name="topic" required />
+          <select name="topic" required>
+            <option value="" disabled selected>Выберите топик</option>
+            <option th:each="t : ${topics}" th:value="${t}" th:text="${t}"></option>
+          </select>
         </div>
         <div>
           <label>Key (опц.)</label>

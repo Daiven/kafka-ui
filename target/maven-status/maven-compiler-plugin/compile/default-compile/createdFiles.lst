@@ -1,2 +1,5 @@
+com\example\kafkaui\service\KafkaService.class
+com\example\kafkaui\service\KafkaService$KafkaTemplateFactory.class
+com\example\kafkaui\web\WebController.class
 com\example\kafkaui\KafkaUiApplication.class
 com\example\kafkaui\config\KafkaConfig.class
