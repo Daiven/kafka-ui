@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Kafka UI</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        form { border: 1px solid #ddd; padding: 12px; margin-bottom: 16px; border-radius: 8px; }
+        input, select, textarea { width: 100%; margin: 4px 0 10px; padding: 6px; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .ok { color: green; }
+    </style>
+    <link rel="icon" href="data:," />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data:;" />
+  </head>
+  <body>
+    <h1>Kafka UI</h1>
+
+    <form method="get" action="/topics">
+      <h3>Список топиков</h3>
+      <label>Bootstrap servers (опц.)</label>
+      <input name="bootstrap" placeholder="localhost:9092" th:value="${bootstrap}" />
+      <button type="submit">Обновить</button>
+      <div th:if="${topics}">
+        <p>Всего: <span th:text="${#lists.size(topics)}"></span></p>
+        <table>
+          <thead><tr><th>Topic</th></tr></thead>
+          <tbody>
+            <tr th:each="t : ${topics}"><td th:text="${t}"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </form>
+
+    <form method="post" action="/produce" enctype="multipart/form-data">
+      <h3>Отправить сообщение</h3>
+      <div class="row">
+        <div>
+          <label>Bootstrap (опц.)</label>
+          <input name="bootstrap" placeholder="localhost:9092" />
+        </div>
+        <div>
+          <label>Topic</label>
+          <input name="topic" required />
+        </div>
+        <div>
+          <label>Key (опц.)</label>
+          <input name="key" />
+        </div>
+        <div>
+          <label>Partition (опц.)</label>
+          <input type="number" name="partition" />
+        </div>
+        <div>
+          <label>Headers (k=v,k2=v2)</label>
+          <input name="headers" />
+        </div>
+      </div>
+      <label>Value</label>
+      <textarea name="value" rows="4" placeholder="Text payload"></textarea>
+      <label>Или файл</label>
+      <input type="file" name="file" />
+      <button type="submit">Отправить</button>
+      <span class="ok" th:if="${produceOk}">Отправлено</span>
+    </form>
+
+    <form method="get" action="/consume">
+      <h3>Прочитать сообщения</h3>
+      <div class="row">
+        <div>
+          <label>Bootstrap (опц.)</label>
+          <input name="bootstrap" placeholder="localhost:9092" />
+        </div>
+        <div>
+          <label>Topic</label>
+          <input name="topic" required />
+        </div>
+        <div>
+          <label>GroupId (опц.)</label>
+          <input name="groupId" />
+        </div>
+        <div>
+          <label>Offset reset (latest|earliest)</label>
+          <input name="offsetReset" placeholder="latest" />
+        </div>
+        <div>
+          <label>Partition (опц.)</label>
+          <input type="number" name="partition" />
+        </div>
+        <div>
+          <label>Offset (опц.)</label>
+          <input type="number" name="offset" />
+        </div>
+        <div>
+          <label>Max records</label>
+          <input type="number" name="max" placeholder="50" />
+        </div>
+        <div>
+          <label>Timeout, ms</label>
+          <input type="number" name="timeout" placeholder="2000" />
+        </div>
+      </div>
+      <button type="submit">Читать</button>
+    </form>
+
+    <div th:if="${consumed}">
+      <h3>Результаты чтения</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Partition</th>
+            <th>Offset</th>
+            <th>Key</th>
+            <th>Value (UTF-8)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="r : ${consumed}">
+            <td th:text="${r.partition}"></td>
+            <td th:text="${r.offset}"></td>
+            <td th:text="${r.key}"></td>
+            <td th:text="${new String(r.value,'UTF-8')}"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </body>
+  </html>
+
+
+

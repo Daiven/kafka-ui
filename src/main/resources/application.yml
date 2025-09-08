@@ -1,0 +1,16 @@
+server:
+  port: 8080
+
+spring:
+  thymeleaf:
+    cache: false
+
+kafka:
+  bootstrapServers: localhost:9092
+
+logging:
+  level:
+    root: info
+    org.apache.kafka: warn
+
+
