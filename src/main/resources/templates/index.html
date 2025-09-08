@@ -4,26 +4,51 @@
     <meta charset="UTF-8" />
     <title>Kafka UI</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        form { border: 1px solid #ddd; padding: 12px; margin-bottom: 16px; border-radius: 8px; }
-        input, select, textarea { width: 100%; margin: 4px 0 10px; padding: 6px; }
+        :root {
+          --sb-green: #21A038;
+          --sb-green-dark: #12953a;
+          --sb-green-light: #e9f7ee;
+          --sb-black: #111111;
+          --sb-gray: #6b7280;
+          --sb-border: #e5e7eb;
+          --sb-bg: #f6f8f7;
+          --radius: 10px;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: var(--sb-bg); color: var(--sb-black); }
+        header { background: linear-gradient(90deg, var(--sb-green), #39b54a); color: white; padding: 16px 24px; }
+        .container { max-width: 1080px; margin: 24px auto; padding: 0 16px; }
+        h1 { margin: 0; font-weight: 700; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        form { background: white; border: 1px solid var(--sb-border); padding: 16px; border-radius: var(--radius); box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+        label { font-size: 12px; color: var(--sb-gray); text-transform: uppercase; letter-spacing: .03em; }
+        input, select, textarea { width: 100%; margin: 6px 0 12px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--sb-border); background: #fff; }
+        textarea { resize: vertical; }
         .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .ok { color: green; }
+        table { border-collapse: collapse; width: 100%; background: white; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--sb-border); }
+        th, td { border-bottom: 1px solid var(--sb-border); padding: 10px 12px; text-align: left; }
+        th { background: var(--sb-green-light); color: var(--sb-black); }
+        .ok { color: var(--sb-green); font-weight: 600; margin-left: 8px; }
+        .btn { appearance: none; border: none; background: var(--sb-green); color: white; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn:hover { background: var(--sb-green-dark); }
+        .muted { color: var(--sb-gray); font-size: 12px; }
     </style>
     <link rel="icon" href="data:," />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data:;" />
   </head>
   <body>
-    <h1>Kafka UI</h1>
+    <header>
+      <h1>Kafka UI</h1>
+      <div class="muted">Sberbank styled</div>
+    </header>
+    <div class="container">
 
     <form method="get" action="/topics">
       <h3>Список топиков</h3>
       <label>Bootstrap servers (опц.)</label>
       <input name="bootstrap" placeholder="localhost:9092" th:value="${bootstrap}" />
-      <button type="submit">Обновить</button>
+      <button class="btn" type="submit">Обновить</button>
       <div th:if="${topics}">
         <p>Всего: <span th:text="${#lists.size(topics)}"></span></p>
         <table>
@@ -33,6 +58,30 @@
           </tbody>
         </table>
       </div>
+    </form>
+
+    <form method="post" action="/topics/create">
+      <h3>Создать топик</h3>
+      <div class="row">
+        <div>
+          <label>Bootstrap (опц.)</label>
+          <input name="bootstrap" placeholder="localhost:9092" />
+        </div>
+        <div>
+          <label>Topic</label>
+          <input name="topic" required />
+        </div>
+        <div>
+          <label>Partitions</label>
+          <input type="number" name="partitions" value="1" min="1" />
+        </div>
+        <div>
+          <label>Replication</label>
+          <input type="number" name="replication" value="1" min="1" />
+        </div>
+      </div>
+      <button class="btn" type="submit">Создать</button>
+      <span class="ok" th:if="${createOk}">Создано</span>
     </form>
 
     <form method="post" action="/produce" enctype="multipart/form-data">
@@ -63,7 +112,7 @@
       <textarea name="value" rows="4" placeholder="Text payload"></textarea>
       <label>Или файл</label>
       <input type="file" name="file" />
-      <button type="submit">Отправить</button>
+      <button class="btn" type="submit">Отправить</button>
       <span class="ok" th:if="${produceOk}">Отправлено</span>
     </form>
 
@@ -103,7 +152,7 @@
           <input type="number" name="timeout" placeholder="2000" />
         </div>
       </div>
-      <button type="submit">Читать</button>
+      <button class="btn" type="submit">Читать</button>
     </form>
 
     <div th:if="${consumed}">
@@ -128,6 +177,7 @@
       </table>
     </div>
 
+    </div>
   </body>
   </html>
 

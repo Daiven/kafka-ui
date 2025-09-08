@@ -37,6 +37,14 @@ public class KafkaService {
         }
     }
 
+    public void createTopic(String serversOverride, String topicName, int numPartitions, short replicationFactor) throws ExecutionException, InterruptedException {
+        String servers = serversOverride != null && !serversOverride.isBlank() ? serversOverride : bootstrapServers;
+        try (Admin admin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, servers))) {
+            NewTopic newTopic = new NewTopic(topicName, numPartitions, replicationFactor);
+            admin.createTopics(Collections.singleton(newTopic)).all().get();
+        }
+    }
+
     public void send(String serversOverride,
                      String topic,
                      String key,

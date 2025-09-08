@@ -37,6 +37,17 @@ public class WebController {
         return "index";
     }
 
+    @PostMapping("/topics/create")
+    public String createTopic(@RequestParam(value = "bootstrap", required = false) String bootstrap,
+                              @RequestParam("topic") String topic,
+                              @RequestParam(value = "partitions", defaultValue = "1") int partitions,
+                              @RequestParam(value = "replication", defaultValue = "1") short replication,
+                              Model model) throws Exception {
+        kafkaService.createTopic(bootstrap, topic, partitions, replication);
+        model.addAttribute("createOk", true);
+        return topics(bootstrap, model);
+    }
+
     @PostMapping("/produce")
     public String produce(@RequestParam(value = "bootstrap", required = false) String bootstrap,
                           @RequestParam("topic") String topic,
