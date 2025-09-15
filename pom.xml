@@ -9,13 +9,13 @@
         <relativePath/>
     </parent>
     <groupId>com.kafka</groupId>
-    <artifactId>kafka-admin</artifactId>
+    <artifactId>kafka-ui</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>kafka-admin</name>
     <description>Kafka Admin Interface</description>
 
     <properties>
-        <java.version>21</java.version>
+        <java.version>17</java.version>
         <lombok.version>1.18.30</lombok.version> <!-- Последняя версия для Java 21 -->
     </properties>
 
