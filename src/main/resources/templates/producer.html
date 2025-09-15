@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Отправка сообщений в Kafka</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.2.3/css/bootstrap.min.css">
+    <script src="/webjars/jquery/3.6.3/jquery.min.js"></script>
+    <script src="/webjars/bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Главная</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Отправка сообщений</li>
+            </ol>
+        </nav>
+
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <h1>Отправка сообщений в Kafka</h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Отправить сообщение</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="messageForm">
+                            <div class="mb-3">
+                                <label for="topicName" class="form-label">Выберите топик</label>
+                                <select class="form-select" id="topicName" name="topicName" required>
+                                    <option value="" selected disabled>Выберите топик...</option>
+                                    <option th:each="topic : ${topics}" th:value="${topic}" th:text="${topic}"></option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="key" class="form-label">Ключ сообщения (опционально)</label>
+                                <input type="text" class="form-control" id="key" name="key" placeholder="Ключ сообщения">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="message" class="form-label">Сообщение</label>
+                                <textarea class="form-control" id="message" name="message" rows="5" required placeholder="Введите текст сообщения"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Отправить сообщение</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Результат</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="resultContainer" style="display: none;">
+                            <div id="successResult" class="alert alert-success" style="display: none;"></div>
+                            <div id="errorResult" class="alert alert-danger" style="display: none;"></div>
+                        </div>
+                        <div id="historyContainer">
+                            <h6>История отправленных сообщений:</h6>
+                            <ul id="messageHistory" class="list-group">
+                                <!-- История сообщений будет добавляться сюда -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageForm = document.getElementById('messageForm');
+            const resultContainer = document.getElementById('resultContainer');
+            const successResult = document.getElementById('successResult');
+            const errorResult = document.getElementById('errorResult');
+            const messageHistory = document.getElementById('messageHistory');
+
+            messageForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const topicName = document.getElementById('topicName').value;
+                const key = document.getElementById('key').value;
+                const message = document.getElementById('message').value;
+
+                const formData = new FormData();
+                formData.append('topicName', topicName);
+                formData.append('message', message);
+                if (key) {
+                    formData.append('key', key);
+                }
+
+                fetch('/producer/send', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    resultContainer.style.display = 'block';
+
+                    if (data.status === 'success') {
+                        successResult.style.display = 'block';
+                        errorResult.style.display = 'none';
+                        successResult.textContent = data.message;
+
+                        // Добавляем в историю
+                        const historyItem = document.createElement('li');
+                        historyItem.className = 'list-group-item';
+
+                        const now = new Date();
+                        const timeString = now.toLocaleTimeString();
+
+                        historyItem.innerHTML = `
+                            <strong>Топик:</strong> ${topicName} |
+                            <strong>Ключ:</strong> ${key || '(нет)'} |
+                            <strong>Сообщение:</strong> ${message} |
+                            <strong>Время:</strong> ${timeString}
+                        `;
+
+                        messageHistory.prepend(historyItem);
+
+                        // Очищаем форму
+                        document.getElementById('message').value = '';
+                    } else {
+                        successResult.style.display = 'none';
+                        errorResult.style.display = 'block';
+                        errorResult.textContent = data.message;
+                    }
+                })
+                .catch(error => {
+                    resultContainer.style.display = 'block';
+                    successResult.style.display = 'none';
+                    errorResult.style.display = 'block';
+                    errorResult.textContent = 'Ошибка при отправке запроса: ' + error.message;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

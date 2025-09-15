@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Kafka Topics</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.2.3/css/bootstrap.min.css">
+    <script src="/webjars/jquery/3.6.3/jquery.min.js"></script>
+    <script src="/webjars/bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Главная</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Топики</li>
+            </ol>
+        </nav>
+
+        <!-- Сообщения об успехе/ошибке -->
+        <div class="row mb-3" th:if="${successMessage}">
+            <div class="col-md-12">
+                <div class="alert alert-success" role="alert" th:text="${successMessage}"></div>
+            </div>
+        </div>
+
+        <div class="row mb-3" th:if="${errorMessage}">
+            <div class="col-md-12">
+                <div class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1>Топики Kafka</h1>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="/topics/create" class="btn btn-success">Создать топик</a>
+                <button onclick="refreshTopics()" class="btn btn-info">Обновить список</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div id="topicsTableContainer">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                            <th>Название топика</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                            <tr th:if="${topics.empty}">
+                                <td colspan="2" class="text-center">Топики не найдены</td>
+                            </tr>
+                            <tr th:each="topic : ${topics}">
+                                <td th:text="${topic}"></td>
+                                <td>
+                                    <a th:href="@{/topics/{name}(name=${topic})}" class="btn btn-info btn-sm">Детали</a>
+                                    <!-- Используем data-* атрибут вместо прямого вызова функции в onclick -->
+                                    <button class="btn btn-danger btn-sm delete-topic-btn"
+                                            th:data-topic-name="${topic}">Удалить</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+        </div>
+                <div id="loadingIndicator" style="display: none;">
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Обработчик для кнопок удаления
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.delete-topic-btn').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const topicName = this.getAttribute('data-topic-name');
+                    deleteTopic(topicName);
+                });
+            });
+        });
+
+        function deleteTopic(topicName) {
+            if (confirm('Вы уверены, что хотите удалить топик ' + topicName + '?')) {
+                fetch('/topics/' + topicName + '/delete', {
+                    method: 'POST'
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Ошибка при удалении топика');
+                    }
+                });
+            }
+        }
+
+        function refreshTopics() {
+            document.getElementById('topicsTableContainer').style.display = 'none';
+            document.getElementById('loadingIndicator').style.display = 'block';
+
+            setTimeout(function() {
+                window.location.reload();
+            }, 500);
+        }
+    </script>
+</body>
+</html>

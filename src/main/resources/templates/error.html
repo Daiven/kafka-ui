@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Ошибка</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.2.3/css/bootstrap.min.css">
+    <script src="/webjars/jquery/3.6.3/jquery.min.js"></script>
+    <script src="/webjars/bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Главная</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Ошибка</li>
+            </ol>
+        </nav>
+
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <h1>Произошла ошибка</h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert alert-danger">
+                    <h4 class="alert-heading">Ошибка!</h4>
+                    <p th:text="${error}">Детали ошибки</p>
+                    <hr>
+                    <p class="mb-0">Пожалуйста, вернитесь на <a href="/">главную страницу</a> и попробуйте снова.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

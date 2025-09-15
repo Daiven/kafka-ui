@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Детали топика Kafka</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.2.3/css/bootstrap.min.css">
+    <script src="/webjars/jquery/3.6.3/jquery.min.js"></script>
+    <script src="/webjars/bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Главная</a></li>
+                <li class="breadcrumb-item"><a href="/topics">Топики</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${topicName}">Детали топика</li>
+            </ol>
+        </nav>
+
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1>Детали топика <span th:text="${topicName}" class="text-primary"></span></h1>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="/topics" class="btn btn-secondary">Назад к списку</a>
+                <button class="btn btn-danger"
+                        th:data-topic-name="${topicName}"
+                        id="deleteTopicBtn">Удалить топик</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Информация о топике</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <th style="width: 200px">Название топика</th>
+                                    <td th:text="${topicName}"></td>
+                                </tr>
+                                <tr>
+                                    <th>Количество партиций</th>
+                                    <td th:text="${description.partitions().size()}"></td>
+                                </tr>
+                                <tr>
+                                    <th>Внутренний топик</th>
+                                    <td th:text="${description.isInternal() ? 'Да' : 'Нет'}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5>Партиции</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Номер партиции</th>
+                                    <th>Лидер (ID брокера)</th>
+                                    <th>Реплики (ID брокеров)</th>
+                                    <th>ISR (синхронизированные реплики)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="partition : ${description.partitions()}">
+                                    <td th:text="${partition.partition()}"></td>
+                                    <td th:text="${partition.leader().id()}"></td>
+                                    <td>
+                                        <span th:each="replica, iterStat : ${partition.replicas()}"
+                                              th:text="${replica.id() + (iterStat.last ? '' : ', ')}">
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span th:each="isr, iterStat : ${partition.isr()}"
+                                              th:text="${isr.id() + (iterStat.last ? '' : ', ')}">
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <a th:href="@{/producer(topicName=${topicName})}" class="btn btn-primary">Отправить сообщение в этот топик</a>
+                    </div>
+                    <div class="col-md-6">
+                        <a th:href="@{/consumer(topicName=${topicName})}" class="btn btn-info">Прочитать сообщения из этого топика</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteButton = document.getElementById('deleteTopicBtn');
+
+            deleteButton.addEventListener('click', function() {
+                const topicName = this.getAttribute('data-topic-name');
+
+                if (confirm('Вы уверены, что хотите удалить топик ' + topicName + '?')) {
+                    fetch('/topics/' + topicName + '/delete', {
+                        method: 'POST'
+                    }).then(response => {
+                        if (response.ok) {
+                            window.location.href = '/topics';
+                        } else {
+                            alert('Ошибка при удалении топика');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

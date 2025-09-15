@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Kafka Topic</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.2.3/css/bootstrap.min.css">
+    <script src="/webjars/jquery/3.6.3/jquery.min.js"></script>
+    <script src="/webjars/bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Главная</a></li>
+                <li class="breadcrumb-item"><a href="/topics">Топики</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Создать топик</li>
+            </ol>
+        </nav>
+
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <h1>Создать новый топик</h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <form method="post" action="/topics/create">
+                    <div class="alert alert-info" role="alert">
+                        <h4 class="alert-heading">Информация о параметрах:</h4>
+                        <p><strong>Партиции</strong> - определяют, как данные распределяются внутри топика. Большее количество партиций обеспечивает лучший параллелизм, но требует больше ресурсов.</p>
+                        <p><strong>Фактор репликации</strong> - количество копий данных, хранимых в кластере. Более высокий фактор обеспечивает лучшую отказоустойчивость, но требует больше дискового пространства.</p>
+                        <hr>
+                        <p class="mb-0">Дополнительные настройки позволяют тонко настроить поведение топика (например, политику очистки, время хранения сообщений и т.д.)</p>
+                    </div>
+                    <div class="mb-3">
+                        <label for="topicName" class="form-label">Название топика</label>
+                        <input type="text" class="form-control" id="topicName" name="topicName" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="partitions" class="form-label">Количество партиций</label>
+                        <input type="number" class="form-control" id="partitions" name="partitions" value="1" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="replicationFactor" class="form-label">Фактор репликации</label>
+                        <input type="number" class="form-control" id="replicationFactor" name="replicationFactor" value="1" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Дополнительные настройки</label>
+
+                        <div class="row mb-2">
+                            <div class="col-md-5">
+                                <input type="text" class="form-control" name="configs.keys[0]" placeholder="Ключ (например, cleanup.policy)">
+                            </div>
+                            <div class="col-md-5">
+                                <input type="text" class="form-control" name="configs.values[0]" placeholder="Значение (например, compact)">
+                            </div>
+                        </div>
+
+                        <div class="row mb-2">
+                            <div class="col-md-5">
+                                <input type="text" class="form-control" name="configs.keys[1]" placeholder="Ключ">
+                            </div>
+                            <div class="col-md-5">
+                                <input type="text" class="form-control" name="configs.values[1]" placeholder="Значение">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-5">
+                                <input type="text" class="form-control" name="configs.keys[2]" placeholder="Ключ">
+                            </div>
+                            <div class="col-md-5">
+                                <input type="text" class="form-control" name="configs.values[2]" placeholder="Значение">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Создать топик</button>
+                    <a href="/topics" class="btn btn-secondary">Отмена</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

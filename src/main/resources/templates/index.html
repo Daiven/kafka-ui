@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Kafka Admin Tool</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.2.3/css/bootstrap.min.css">
+    <script src="/webjars/jquery/3.6.3/jquery.min.js"></script>
+    <script src="/webjars/bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <h1 class="text-center">Kafka Admin Tool</h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Топики Kafka</h5>
+                        <p class="card-text">Просмотр, создание и управление топиками Kafka.</p>
+                        <a href="/topics" class="btn btn-primary">Перейти</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Отправка сообщений</h5>
+                        <p class="card-text">Отправка сообщений в топики Kafka.</p>
+                        <a href="/producer" class="btn btn-primary">Перейти</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Чтение сообщений</h5>
+                        <p class="card-text">Чтение сообщений из топиков Kafka.</p>
+                        <a href="/consumer" class="btn btn-primary">Перейти</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Чтение сообщений из Kafka</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.2.3/css/bootstrap.min.css">
+    <script src="/webjars/jquery/3.6.3/jquery.min.js"></script>
+    <script src="/webjars/bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Главная</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Чтение сообщений</li>
+            </ol>
+        </nav>
+
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <h1>Чтение сообщений из Kafka</h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-5">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Параметры чтения</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="consumerForm">
+                            <div class="mb-3">
+                                <label for="topicName" class="form-label">Выберите топик</label>
+                                <select class="form-select" id="topicName" name="topicName" required>
+                                    <option value="" selected disabled>Выберите топик...</option>
+                                    <option th:each="topic : ${topics}" th:value="${topic}" th:text="${topic}"></option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="groupId" class="form-label">ID группы потребителей</label>
+                                <input type="text" class="form-control" id="groupId" name="groupId"
+                                       th:value="'group-' + ${#dates.format(#dates.createNow(), 'yyyyMMdd-HHmmss')}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="maxMessages" class="form-label">Максимальное количество сообщений</label>
+                                <input type="number" class="form-control" id="maxMessages" name="maxMessages" value="10" min="1" max="100">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="pollTimeoutMs" class="form-label">Таймаут опроса (мс)</label>
+                                <input type="number" class="form-control" id="pollTimeoutMs" name="pollTimeoutMs" value="5000" min="1000">
+                            </div>
+
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="fromBeginning" name="fromBeginning" value="true" checked>
+                                <label class="form-check-label" for="fromBeginning">Читать с начала топика</label>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Прочитать сообщения</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5>Чтение из конкретной партиции</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="specificConsumerForm">
+                            <div class="mb-3">
+                                <label for="specificTopicName" class="form-label">Выберите топик</label>
+                                <select class="form-select" id="specificTopicName" name="topicName" required>
+                                    <option value="" selected disabled>Выберите топик...</option>
+                                    <option th:each="topic : ${topics}" th:value="${topic}" th:text="${topic}"></option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="partition" class="form-label">Номер партиции</label>
+                                <input type="number" class="form-control" id="partition" name="partition" value="0" min="0" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="offset" class="form-label">Смещение (offset)</label>
+                                <input type="number" class="form-control" id="offset" name="offset" value="0" min="0" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="specificMaxMessages" class="form-label">Макс. количество сообщений</label>
+                                <input type="number" class="form-control" id="specificMaxMessages" name="maxMessages" value="10" min="1" max="100">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Прочитать из партиции</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-7">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>Результат</h5>
+                        <div>
+                            <span id="messageCount" class="badge bg-primary">0</span> сообщений
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="loadingIndicator" style="display: none;">
+                            <div class="d-flex justify-content-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
+
+                        <div id="messagesContainer">
+                            <div id="noMessagesAlert" class="alert alert-info">
+                                Выберите топик и нажмите "Прочитать сообщения" для получения данных.
+                            </div>
+                            <div id="messagesTable" style="display: none;">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Партиция</th>
+                                            <th>Смещение</th>
+                                            <th>Ключ</th>
+                                            <th>Значение</th>
+                                            <th>Время</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="messagesTableBody">
+                                        <!-- Результаты будут добавлены сюда -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const consumerForm = document.getElementById('consumerForm');
+            const specificConsumerForm = document.getElementById('specificConsumerForm');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const errorContainer = document.getElementById('errorContainer');
+            const noMessagesAlert = document.getElementById('noMessagesAlert');
+            const messagesTable = document.getElementById('messagesTable');
+            const messagesTableBody = document.getElementById('messagesTableBody');
+            const messageCount = document.getElementById('messageCount');
+
+            // Обработчик для обычного потребления
+            consumerForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                readMessages();
+            });
+
+            // Обработчик для чтения из конкретной партиции
+            specificConsumerForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                readFromPartition();
+            });
+
+            function readMessages() {
+                const topicName = document.getElementById('topicName').value;
+                const groupId = document.getElementById('groupId').value;
+                const maxMessages = document.getElementById('maxMessages').value;
+                const pollTimeoutMs = document.getElementById('pollTimeoutMs').value;
+                const fromBeginning = document.getElementById('fromBeginning').checked;
+
+                // Показываем индикатор загрузки
+                showLoading();
+
+                const formData = new FormData();
+                formData.append('topicName', topicName);
+                formData.append('groupId', groupId);
+                formData.append('maxMessages', maxMessages);
+                formData.append('pollTimeoutMs', pollTimeoutMs);
+                formData.append('fromBeginning', fromBeginning);
+
+                fetch('/consumer/read', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+
+                    if (data.status === 'success') {
+                        displayMessages(data.messages);
+                    } else {
+                        showError(data.message);
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    showError('Ошибка при чтении сообщений: ' + error.message);
+                });
+            }
+
+            function readFromPartition() {
+                const topicName = document.getElementById('specificTopicName').value;
+                const partition = document.getElementById('partition').value;
+                const offset = document.getElementById('offset').value;
+                const maxMessages = document.getElementById('specificMaxMessages').value;
+
+                // Показываем индикатор загрузки
+                showLoading();
+
+                const formData = new FormData();
+                formData.append('topicName', topicName);
+                formData.append('partition', partition);
+                formData.append('offset', offset);
+                formData.append('maxMessages', maxMessages);
+
+                fetch('/consumer/read-specific', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+
+                    if (data.status === 'success') {
+                        displayMessages(data.messages);
+                    } else {
+                        showError(data.message);
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    showError('Ошибка при чтении сообщений: ' + error.message);
+                });
+            }
+
+            function displayMessages(messages) {
+                errorContainer.style.display = 'none';
+
+                if (!messages || messages.length === 0) {
+                    noMessagesAlert.textContent = 'Сообщения не найдены в выбранном топике.';
+                    noMessagesAlert.style.display = 'block';
+                    messagesTable.style.display = 'none';
+                    messageCount.textContent = '0';
+                    return;
+                }
+
+                // Очищаем предыдущие результаты
+                messagesTableBody.innerHTML = '';
+
+                // Добавляем новые результаты
+                messages.forEach(msg => {
+                    const row = document.createElement('tr');
+
+                    // Форматируем дату
+                    const date = new Date(msg.timestamp);
+                    const formattedDate = date.toLocaleString();
+
+                    row.innerHTML = `
+                        <td>${msg.partition}</td>
+                        <td>${msg.offset}</td>
+                        <td>${msg.key || '<нет>'}</td>
+                        <td>${msg.value}</td>
+                        <td>${formattedDate}</td>
+                    `;
+
+                    messagesTableBody.appendChild(row);
+                });
+
+                // Показываем таблицу и скрываем сообщение об отсутствии данных
+                noMessagesAlert.style.display = 'none';
+                messagesTable.style.display = 'block';
+                messageCount.textContent = messages.length;
+            }
+
+            function showLoading() {
+                loadingIndicator.style.display = 'block';
+                errorContainer.style.display = 'none';
+                noMessagesAlert.style.display = 'none';
+                messagesTable.style.display = 'none';
+            }
+
+            function hideLoading() {
+                loadingIndicator.style.display = 'none';
+            }
+
+            function showError(message) {
+                errorContainer.textContent = message;
+                errorContainer.style.display = 'block';
+                noMessagesAlert.style.display = 'none';
+                messagesTable.style.display = 'none';
+                messageCount.textContent = '0';
+            }
+        });
+    </script>
+</body>
+</html>
