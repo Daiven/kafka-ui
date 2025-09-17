@@ -45,7 +45,13 @@
 
                             <div class="mb-3">
                                 <label for="message" class="form-label">Сообщение</label>
-                                <textarea class="form-control" id="message" name="message" rows="5" required placeholder="Введите текст сообщения"></textarea>
+                                <div class="input-group mb-2">
+                                    <button type="button" class="btn btn-outline-secondary" id="prettyPrintBtn">Pretty Print JSON</button>
+                                    <button type="button" class="btn btn-outline-secondary" id="minifyJsonBtn">Minify JSON</button>
+                                    <button type="button" class="btn btn-outline-secondary" id="validateJsonBtn">Validate JSON</button>
+                                </div>
+                                <textarea class="form-control" id="message" name="message" rows="8" required placeholder="Введите текст сообщения (поддерживается JSON)"></textarea>
+                                <div id="jsonValidation" class="mt-2" style="display: none;"></div>
                             </div>
 
                             <button type="submit" class="btn btn-primary">Отправить сообщение</button>
@@ -53,7 +59,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
@@ -84,12 +89,120 @@
             const errorResult = document.getElementById('errorResult');
             const messageHistory = document.getElementById('messageHistory');
 
+            // Функции для работы с JSON
+            function isValidJson(str) {
+                try {
+                    JSON.parse(str);
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            function prettyPrintJson(str) {
+                try {
+                    const obj = JSON.parse(str);
+                    return JSON.stringify(obj, null, 2);
+                } catch (e) {
+                    throw new Error('Невалидный JSON: ' + e.message);
+                }
+            }
+
+            function minifyJson(str) {
+                try {
+                    const obj = JSON.parse(str);
+                    return JSON.stringify(obj);
+                } catch (e) {
+                    throw new Error('Невалидный JSON: ' + e.message);
+                }
+            }
+
+            function validateJson(str) {
+                const validationDiv = document.getElementById('jsonValidation');
+
+                if (!str.trim()) {
+                    validationDiv.style.display = 'none';
+                    return;
+                }
+
+                validationDiv.style.display = 'block';
+
+                if (isValidJson(str)) {
+                    validationDiv.innerHTML = '<div class="alert alert-success py-1 mb-0"><small>✓ Валидный JSON</small></div>';
+                } else {
+                    try {
+                        JSON.parse(str);
+                    } catch (e) {
+                        validationDiv.innerHTML = '<div class="alert alert-danger py-1 mb-0"><small>✗ Невалидный JSON: ' + e.message + '</small></div>';
+                    }
+                }
+            }
+
+            // Обработчики кнопок
+            document.getElementById('prettyPrintBtn').addEventListener('click', function() {
+                const messageTextarea = document.getElementById('message');
+                const message = messageTextarea.value;
+                if (!message.trim()) {
+                    alert('Введите JSON для форматирования');
+                    return;
+                }
+                try {
+                    messageTextarea.value = prettyPrintJson(message);
+                    validateJson(messageTextarea.value);
+                } catch (e) {
+                    alert(e.message);
+                }
+            });
+
+            document.getElementById('minifyJsonBtn').addEventListener('click', function() {
+                const messageTextarea = document.getElementById('message');
+                const message = messageTextarea.value;
+
+                if (!message.trim()) {
+                    alert('Введите JSON для минификации');
+                    return;
+                }
+
+                try {
+                    messageTextarea.value = minifyJson(message);
+                    validateJson(messageTextarea.value);
+                } catch (e) {
+                    alert(e.message);
+                }
+            });
+
+            document.getElementById('validateJsonBtn').addEventListener('click', function() {
+                const message = document.getElementById('message').value;
+                validateJson(message);
+            });
+
+            // Автоматическая валидация при вводе
+            document.getElementById('message').addEventListener('input', function() {
+                const message = this.value;
+                if (message.trim() && (message.trim().startsWith('{') || message.trim().startsWith('['))) {
+                    validateJson(message);
+                } else {
+                    document.getElementById('jsonValidation').style.display = 'none';
+                }
+            });
+
             messageForm.addEventListener('submit', function(e) {
                 e.preventDefault();
 
                 const topicName = document.getElementById('topicName').value;
                 const key = document.getElementById('key').value;
                 const message = document.getElementById('message').value;
+
+                // Валидация JSON перед отправкой (если сообщение похоже на JSON)
+                if (message.trim() && (message.trim().startsWith('{') || message.trim().startsWith('['))) {
+                    if (!isValidJson(message)) {
+                        resultContainer.style.display = 'block';
+                        successResult.style.display = 'none';
+                        errorResult.style.display = 'block';
+                        errorResult.textContent = 'Ошибка: Сообщение содержит невалидный JSON. Проверьте синтаксис.';
+                        return;
+                    }
+                }
 
                 const formData = new FormData();
                 formData.append('topicName', topicName);
@@ -118,10 +231,13 @@
                         const now = new Date();
                         const timeString = now.toLocaleTimeString();
 
+                        // Обрезаем длинные сообщения для истории
+                        const shortMessage = message.length > 50 ? message.substring(0, 50) + '...' : message;
+
                         historyItem.innerHTML = `
                             <strong>Топик:</strong> ${topicName} |
                             <strong>Ключ:</strong> ${key || '(нет)'} |
-                            <strong>Сообщение:</strong> ${message} |
+                            <strong>Сообщение:</strong> ${shortMessage} |
                             <strong>Время:</strong> ${timeString}
                         `;
 
@@ -129,6 +245,7 @@
 
                         // Очищаем форму
                         document.getElementById('message').value = '';
+                        document.getElementById('jsonValidation').style.display = 'none';
                     } else {
                         successResult.style.display = 'none';
                         errorResult.style.display = 'block';

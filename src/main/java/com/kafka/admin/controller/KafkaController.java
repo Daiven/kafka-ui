@@ -3,6 +3,7 @@ package com.kafka.admin.controller;
 import com.kafka.admin.service.KafkaAdminService;
 import com.kafka.admin.service.KafkaConsumerService;
 import com.kafka.admin.service.KafkaProducerService;
+import com.kafka.admin.util.JsonValidator;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,14 +23,17 @@ public class KafkaController {
     private final KafkaAdminService kafkaAdminService;
     private final KafkaProducerService kafkaProducerService;
     private final KafkaConsumerService kafkaConsumerService;
+    private final JsonValidator jsonValidator;
 
     public KafkaController(KafkaAdminService kafkaAdminService,
                            KafkaProducerService kafkaProducerService,
-                           KafkaConsumerService kafkaConsumerService) {
+                           KafkaConsumerService kafkaConsumerService,
+                           JsonValidator jsonValidator) {
         logger.info("Initializing KafkaController");
         this.kafkaAdminService = kafkaAdminService;
         this.kafkaProducerService = kafkaProducerService;
         this.kafkaConsumerService = kafkaConsumerService;
+        this.jsonValidator = jsonValidator;
         logger.debug("KafkaController initialized successfully");
     }
 
@@ -147,6 +151,19 @@ public class KafkaController {
                                          @RequestParam String message) {
         logger.info("Sending message to topic: {} with key: {}", topicName, key);
         logger.debug("Message content: {}", message);
+
+        // Валидация JSON если сообщение выглядит как JSON
+        if (message.trim().startsWith("{") || message.trim().startsWith("[")) {
+            if (!jsonValidator.isValidJson(message)) {
+                logger.warn("Invalid JSON format in message");
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "error");
+                response.put("message", "Invalid JSON format");
+            return response;
+        }
+            logger.debug("Message validated as valid JSON");
+    }
+
         try {
             kafkaProducerService.sendMessage(topicName, key, message);
             logger.info("Successfully sent message to topic: {}", topicName);
@@ -241,7 +258,7 @@ public class KafkaController {
             response.put("status", "error");
             response.put("message", e.getMessage());
             return response;
-        }
+}
     }
 
     // Удаление топика

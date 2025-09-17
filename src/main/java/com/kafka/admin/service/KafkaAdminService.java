@@ -18,23 +18,18 @@ public class KafkaAdminService {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaAdminService.class);
 
-    private final KafkaAdmin kafkaAdmin;
+    private final AdminClient adminClient;
 
-    public KafkaAdminService(KafkaAdmin kafkaAdmin) {
+    public KafkaAdminService(AdminClient adminClient) {
         logger.info("Initializing KafkaAdminService");
-        this.kafkaAdmin = kafkaAdmin;
+        this.adminClient = adminClient;
         logger.debug("KafkaAdminService initialized successfully");
-    }
-
-    // Добавляем этот метод для поддержки тестирования
-    protected AdminClient createAdminClient() {
-        return AdminClient.create(kafkaAdmin.getConfigurationProperties());
     }
 
     // Получение списка топиков
     public List<String> listTopics() throws ExecutionException, InterruptedException {
         logger.info("Listing all Kafka topics");
-        try (AdminClient adminClient = createAdminClient()) {
+        try {
             ListTopicsResult listTopicsResult = adminClient.listTopics();
             Set<String> topicNames = listTopicsResult.names().get();
             logger.info("Found {} topics", topicNames.size());
@@ -53,7 +48,7 @@ public class KafkaAdminService {
                    topicName, numPartitions, replicationFactor);
         logger.debug("Topic configs: {}", configs);
 
-        try (AdminClient adminClient = createAdminClient()) {
+        try {
             NewTopic newTopic = new NewTopic(topicName, numPartitions, replicationFactor);
 
             if (configs != null && !configs.isEmpty()) {
@@ -75,7 +70,7 @@ public class KafkaAdminService {
     // Получение детальной информации о топике
     public Map<String, TopicDescription> describeTopic(String topicName) {
         logger.info("Describing topic: {}", topicName);
-        try (AdminClient adminClient = createAdminClient()) {
+        try {
             DescribeTopicsResult result = adminClient.describeTopics(Collections.singleton(topicName));
             Map<String, TopicDescription> descriptions = result.allTopicNames().get();
             logger.info("Successfully described topic: {}", topicName);
@@ -93,7 +88,7 @@ public class KafkaAdminService {
     // Удаление топика
     public void deleteTopic(String topicName) {
         logger.info("Deleting topic: {}", topicName);
-        try (AdminClient adminClient = createAdminClient()) {
+        try {
             // Используем явное преобразование типа для коллекции
             Collection<String> topics = Collections.singleton(topicName);
             DeleteTopicsResult result = adminClient.deleteTopics(topics);
